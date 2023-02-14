@@ -1,0 +1,406 @@
+Cats and Dogs
+OmkarMParkhi1,2 AndreaVedaldi1 AndrewZisserman1 C.V.Jawahar2
+1DepartmentofEngineeringScience, 2CenterforVisualInformationTechnology,
+UniversityofOxford, InternationalInstituteofInformationTechnology,
+UnitedKingdom Hyderabad,India
+{omkar,vedaldi,az}@robots.ox.ac.uk jawahar@iiit.ac.in
+Abstract ing different breeds of cats and dogs, a challenging exam-
+pleofﬁnegrainedobjectcategorizationinlinewiththatof
+We investigate the ﬁne grained object categorization previous work on ﬂower [15, 32, 33, 39] and animal and
+problemofdeterminingthebreedofanimalfromanimage. bird species [14, 27, 28, 43] categorization. The difﬁculty
+To this end we introduce a new annotated dataset of pets, is in the fact that breeds may differ only by a few subtle
+theOxford-IIIT-Petdataset,covering37differentbreedsof phenotypic details that, due to the highly deformable na-
+cats and dogs. The visual problem is very challenging as tureofthebodiesofsuchanimals,canbedifﬁculttomea-
+these animals, particularly cats, are very deformable and sure automatically. Indeed, authors have often focused on
+therecanbequitesubtledifferencesbetweenthebreeds. cats and dogs as examples of highly deformable objects
+Wemakeanumberofcontributions:ﬁrst,weintroducea forwhichrecognitionanddetectionisparticularlychalleng-
+modeltoclassifyapetbreedautomaticallyfromanimage. ing[24,29,34,45].
+Themodelcombinesshape,capturedbyadeformablepart Beyondthetechnicalinterestofﬁnegrainedcategoriza-
+modeldetectingthepetface,andappearance,capturedby tion,extractinginformationfromimagesofpetshasaprac-
+abag-of-wordsmodelthatdescribesthepetfur. Fittingthe tical side too. People devote a lot of attention to their do-
+modelinvolvesautomaticallysegmentingtheanimalinthe mestic animals, as suggested by the large number of so-
+image. Second,wecomparetwoclassiﬁcationapproaches: cial networks dedicated to the sharing of images of cats
+ahierarchicalone,inwhichapetisﬁrstassignedtothecat and dogs: Pet Finder [11], Catster [4], Dogster [5], My
+ordogfamilyandthentoabreed,andaﬂatone,inwhich Cat Space [9], My Dog Space [10], The International Cat
+thebreedisobtaineddirectly. Wealsoinvestigateanumber Association [8] and several others [1, 2, 3, 12]. In fact,
+ofanimalandimageorientatedspatiallayouts. the bulk of the data used in this paper has been extracted
+These models are very good: they beat all previously from annotated images that users of these social sites post
+published results on the challenging ASIRRA test (cat vs daily(Sect.2). Itisnotunusualforownerstobelieve(and
+dogdiscrimination). Whenappliedtothetaskofdiscrimi- post) the incorrect breed for their pet, so having a method
+natingthe37differentbreedsofpets,themodelsobtainan of automated classiﬁcation could provide a gentle way of
+averageaccuracyofabout59%,averyencouragingresult alertingthemtosucherrors.
+consideringthedifﬁcultyoftheproblem. Theﬁrstcontributionofthispaperistheintroductionofa
+largeannotatedcollectionofimagesof37differentbreeds
+of cats and dogs (Sect. 2). It includes 12 cat breeds and
+1.Introduction 25dogbreeds. Thisdataconstitutesthebenchmarkforpet
+breedclassiﬁcation,and,duetoitsfocusonﬁnegrainedcat-
+Research on object category recognition has largely fo- egorization,iscomplementarytothestandardobjectrecog-
+cusedonthediscriminationofwelldistinguishedobjectcat- nition benchmarks. The data, which is publicly available,
+egories (e.g, airplane vs cat). Most popular international comes with rich annotations: in addition to a breed label,
+benchmarks(e.g,Caltech-101[22],Caltech-256[26],PAS- eachpethas apixellevelsegmentationanda rectanglelo-
+CAL VOC [20]) contain a few dozen object classes that, calisingitshead. Asimpleevaluationprotocol,inspiredby
+forthemostpart,arevisuallydissimilar. Eveninthemuch the PASCAL VOC challenge, is also proposed to enable
+largerImageNetdatabase[18],categoriesaredeﬁnedbased the comparison of future methods on a common grounds
+on a high-level ontology and, as such, any visual similar- (Sect.2). Thisdatasetisalsocomplementarytothesubset
+ity between themis more accidental thansystematic. This ofImageNetusedin[27]fordogs,asitcontainsadditional
+work concentrates instead on the problem of discriminat- annotations,thoughforfewerbreeds.
+1VOCdata. Thedatasetcontainsabout200imagesforeach
+breed(whichhavebeensplitrandomlyinto50fortraining,
+50 for validation, and 100 for testing). A detailed list of
+breedsisgiveninTab.1,andexampleimagesaregivenin
+Fig.2. Thedatasetisavailableat[35].
+Dataset collection. The pet images were downloaded
+fromCatster[4]andDogster[5],twosocialwebsitesded-
+icated to the collection and discussion of images of pets,
+fromFlickr[6]groups, andfromGoogleimages[7]. Peo-
+ple uploading images to Catster and Dogster provide the
+Figure 1. Annotations in the Oxford-IIIT Pet data. From left
+breed information as well, and the Flickr groups are spe-
+toright: petimage,headboundingbox,andtrimapsegmentation
+ciﬁc to each breed, which simpliﬁes tagging. For each of
+(blue: background region; red: ambiguous region; yellow: fore-
+the 37 breeds, about 2,000 – 2,500 images were down-
+groundregion).
+loadedfromthesedatasourcestoformapoolofcandidates
+for inclusion in the dataset. From this candidate list, im-
+The second contribution of the paper is a model for pet ages were dropped if any of the following conditions ap-
+breed discrimination (Sect. 3). The model captures both plied, as judged by the annotators: (i) the image was gray
+shape(byadeformablepartmodel[23,42]ofthepetface) scale,(ii)anotherimageportrayingthesameanimalexisted
+andtexture(byabag-of-visual-wordsmodel[16,30,38,44] (which happens frequently in Flickr), (iii) the illumination
+ofthepetfur).Unfortunately,currentdeformablepartmod- waspoor,(iv)thepetwasnotcenteredintheimage,or(v)
+els are not sufﬁciently advanced to represent satisfactorily the pet was wearing clothes. The most common problem
+thehighlydeformablebodiesofcatsanddogs;nevertheless, in all the data sources, however, was found to be errors in
+they can be used to reliably extract stable and distinctive thebreedlabels. Thuslabelswerereviewedbythehuman
+componentsofthebody, suchasthepetface. Themethod annotators and ﬁxed whenever possible. When ﬁxing was
+used in [34] followed from this observation: a cat’s face notpossible,forinstancebecausethepetwasacrossbreed,
+wasdetectedastheﬁrststageindetectingtheentireanimal. theimagewasdropped. Overall,upto200imagesforeach
+Herewegofurtherinusingthedetectedheadshapeasapart ofthe37breedswereobtained.
+of the feature descriptor. Two natural ways of combining
+theshapeandappearancefeaturesarethenconsideredand Annotations. Eachimageisannotatedwithabreedlabel,
+compared: aﬂatapproach,inwhichbothfeaturesareused a pixel level segmentation marking the body, and a tight
+toregressthepet’sfamilyandthebreedsimultaneously,and boundingboxaboutthehead. Thesegmentationisatrimap
+a hierarchical one, in which the family is determined ﬁrst with regions corresponding to: foreground (the pet body),
+based on the shape features alone, and then appearance is background, and ambiguous (the pet body boundary and
+used to predict the breed conditioned on the family. Infer- any accessory such as collars). Fig. 1 shows examples of
+ringthemodelinanimageinvolvessegmentingtheanimal theseannotations.
+fromthebackground. Tothisend,weimprovedonourpre-
+vious method on of segmentation in [34] basing it on the
+Evaluationprotocol. Threetasksaredeﬁned: petfamily
+extractionofsuperpixels.
+classiﬁcation(CatvsDog,atwoclassproblem),breedclas-
+Themodelisvalidatedexperimentallyonthetaskofdis-
+siﬁcationgiventhefamily(a12classproblemforcatsand
+criminating the 37 pet breeds (Sect. 4), obtaining very en-
+a 25 class problem for dogs), and breed and family classi-
+couraging results, especially considering the toughness of
+ﬁcation(a37classproblem). Inallcases,theperformance
+theproblem. Furthermore, wealsousethemodeltobreak
+ismeasuredastheaverageper-classclassiﬁcationaccuracy.
+theASIRRAtestthatusestheabilityofdiscriminatingbe-
+Thisistheproportionofcorrectlyclassiﬁedimagesforeach
+tweencatsanddogstotellhumansfrommachines.
+of the classes and can be computed as the average of the
+diagonal of the (row normalized) confusion matrix. This
+2.Datasetsandevaluationmeasures
+meansthat,forexample,arandomclassiﬁerhasaverageac-
+curacyof1/2 = 50%forthefamilyclassiﬁcationtask,and
+2.1.TheOxford-IIITPetdataset
+of 1/37 ≈ 3% for the breed and family classiﬁcation task.
+TheOxford-IIITPetdatasetisacollectionof7,349im- Algorithms are trained on the training and validation sub-
+ages of cats and dogs of 37 different breeds, of which 25 setsandtestedonthetestsubset. Thesplitbetweentraining
+aredogsand12arecats. Imagesaredividedintotraining, andvalidationisprovidedonlyforconvenience,butcanbe
+validation,andtestsets,inasimilarmannertothePASCAL disregarded.Breed Training Validation Test Total Breed Training Validation Test Total
+Abyssinian 50 50 98 198 EnglishSetter 50 50 100 200
+Bengal 50 50 100 200 GermanShorthaired 50 50 100 200
+Birman 50 50 100 200 GreatPyrenees 50 50 100 200
+Bombay 49 47 88 184 Havanese 50 50 100 200
+BritishShorthair 50 50 100 200 JapaneseChin 50 50 100 200
+EgyptianMau 47 46 97 190 Keeshond 50 50 99 199
+MaineCoon 50 50 100 200 Leonberger 50 50 100 200
+Persian 50 50 100 200 MiniaturePinscher 50 50 100 200
+Ragdoll 50 50 100 200 Newfoundland 50 46 100 196
+RussianBlue 50 50 100 200 Pomeranian 50 50 100 200
+Siamese 50 49 100 199 Pug 50 50 100 200
+Sphynx 50 50 100 200 SaintBernard 50 50 100 200
+AmericanBulldog 50 50 100 200 Samoyed 50 50 100 200
+AmericanPitBullTerrier 50 50 100 200 ScottishTerrier 50 50 99 199
+BassetHound 50 50 100 200 ShibaInu 50 50 100 200
+Beagle 50 50 100 200 StaffordshireBullTerrier 50 50 89 189
+Boxer 50 50 99 199 WheatenTerrier 50 50 100 200
+Chihuahua 50 50 100 200 YorkshireTerrier 50 50 100 200
+EnglishCockerSpaniel 50 46 100 196 Total 1846 1834 3669 7349
+Table1.Oxford-IIITPetdatacomposition.The12catbreedsfollowedbythe25dogbreeds.
+Abyssinian Bengal Bombay Birman BritishShorthair MaineCoon
+Persian Egyptian Ragdoll RussianBlue Siamese Sphynx
+Eng.Setter Boxer Keeshond Havanese BassetHound MiniPinscher
+Chihuahua GreatPyrenees GermanShorthaired Beagle Staff.BullTerrier Eng.Cocker
+NewFoundLand Pomeranian Leonberger Am.PitBullTerrier WheatenTerrier JapaneseChin
+Samoyed ScottishTerrier ShibaInu Pug SaintBernard Am.BullDog
+Figure2.ExampleimagesfromtheOxford-IIITPetdata.Twoimagesperbreedareshownsidebysidetoillustratethedatavariability.
+2.2.TheASIRRAdataset chines,andcreatedtheASIRRAtest([19],Fig.3)onthisba-
+sis. Theassumptionisthat,outofabatchoftwelveimages
+MicrosoftResearch(MSR)proposedtheproblemofdis-
+of pets, any machine would predict incorrectly the family
+criminatingcatsfromdogsasatesttotellhumansfromma-seen by examining the performance of this detector on the
+cats and dogs in the recent PASCAL VOC 2011 challenge
+data [20]. The deformable parts detector [23] obtains an
+Average Precision (AP) of only 31.7% and 22.1% on cats
+and dogs respectively [20]; by comparison, an easier cat-
+egory such as bicycle has AP of 54% [20]. However, in
+thePASCALVOCchallengethetaskistodetectthewhole
+body of the animal. As in the method of [34], we use the
+deformable part model to detect certain stable and distinc-
+tivecomponentsofthebody. Inparticular,theheadannota-
+tionsincludedintheOxford-IIITPetdataareusedtolearn
+a deformable part model of the cat faces, and one of the
+dogfaces([24,29,45]alsofocusonmodellingthefacesof
+pets). Sect. 4.1 shows that these shape models are in fact
+verygood.
+3.2.Appearancemodel
+Figure3.ExampleimagesfromtheMSRASIRRAdataset.
+Torepresenttexture,weuseabag-of-words[16]model.
+Visualwords[38]arecomputeddenselyontheimagebyex-
+ofatleastoneofthem,whilehumanswouldmakenomis-
+tractingSIFTdescriptors[31]withastrideof6pixelsand
+takes. TheASIRRAtestiscurrentlyusedtoprotectanum-
+at4scales,deﬁnedbysettingthewidthoftheSIFTspatial
+berofwebsitesfromtheunwantedaccessbyInternetbots.
+binsto4,6,8,and10pixelsrespectively.TheSIFTfeatures
+However, the reliability of this test depends on the clas-
+haveconstantorientation(i.e,theyarenotadaptedtothelo-
+siﬁcation accuracy α of the classiﬁer implemented by the
+calimageappearance).TheSIFTdescriptorsarethenquan-
+bot. For instance, if the classiﬁer has accuracy α = 95%,
+tizedbasedonavocabularyof4,000visualwords. Thevo-
+thenthebotfoolstheASIRRAtestroughlyhalfofthetimes
+cabularyislearnedbyusingk-meansonfeaturesrandomly
+(α12 ≈54%).
+sampledfromthetrainingdata.Inordertoobtainadescrip-
+The complete MSR ASIRRA system is based on a
+tor for the image, the quantized SIFT features are pooled
+databaseofseveralmillionsimagesofpets,equallydivided
+intoaspatialhistogram[30],whichhasdimensionequalto
+between cats and dogs. Our classiﬁers are tested on the
+4,000timesthenumberofspatialbins.Histogramsarethen
+24,990imagesthathavebeenmadeavailabletothepublic l1normalizedandusedinasupportvectormachine(SVM)
+forresearchandevaluationpurposes. basedontheexponential-χ2kernel[44]forclassiﬁcation.
+Different variants of the spatial histograms can be ob-
+tainedbyplacingthespatialbinsincorrespondenceofpar-
+3.Amodelforbreeddiscrimination
+ticulargeometricfeaturesofthepet. Theselayoutsarede-
+The breed of a pet affects its size, shape, fur type and scribednextandinFig.4:
+color. Sinceitisnotpossibletomeasurethepetsizefrom
+animagewithoutanabsolutereference,ourmodelfocuses Imagelayout. Thislayoutconsistsofﬁvespatialbinsor-
+oncapturingthepetshape(Sect.3.1)andtheappearanceof ganizedasa1×1anda2×2grids(Fig.4a)coveringthe
+its fur (Sect. 3.2). The model also involves automatically entire image area, as in [30]. This results in a 20,000 di-
+segmentingthepetfromtheimagebackground(Sect.3.3). mensionalfeaturevector.
+3.1.Shapemodel
+Image+headlayout. Thislayoutaddstotheimagelayout
+To represent shape, we use the deformable part model just described a spatial bin in correspondence of the head
+of[23]. Inthismodel,anobjectisgivenbyarootpartcon- bounding box (as detected by the deformable part model
+nected with springs to eight smaller parts at a ﬁner scale. of the pet face) as well as one for the complement of this
+The appearance of each part is represented by a HOG ﬁl- box. Thesetworegionsdonotcontainfurtherspatialsubdi-
+ter[17],capturingthelocaldistributionoftheimageedges; visions (Fig. 4b). Concatenating the histograms for all the
+inference(detection)usesdynamicprogrammingtoﬁndthe spatial bins in this layout results in a 28,000 dimensional
+besttrade-offbetweenmatchingwelleachparttotheimage featurevector.
+andnotdeformingthespringstoomuch.
+While powerful, this model is insufﬁcient to represent Image+head+body layout. This layout combines the
+the ﬂexibility and variability of a pet body. This can be spatialtilesintheimagelayoutwithanadditionalspatialbinMethod MeanSegmentationAccuracy
+Allforeground 45%
+Parkhietal.[34] 61%
+(a) Image (b) Image+Head Thispaper 65%
+Table2.Performanceofsegmentationschemes. Segmentation
+accuracy computed as intersection over union of segmentation
+withgroundtruth.
+(c) Image+Head+Body
+Dataset MeanClassiﬁcationAccuracy
+Figure4.Spatialhistogramlayouts. Thethreedifferentspatial Oxford-IIITPetDataset 38.45%
+layoutsusedforcomputingtheimagedescriptors. Theimagede- UCSD-CaltechBirds 6.91%
+scriptor in each case is formed by concatenating the histograms Oxford-Flowers102 53.71%
+computedontheindividualspatialcomponentsofthelayout.The
+spatialbinsaredenotedbyyellow-blacklines. Table3.Finegrainedclassiﬁcationbaseline.Meanclassiﬁcation
+accuraciesobtainedonthreedifferentdatasetsusingtheVLFeat-
+BoWclassiﬁcationcode.
+in correspondence of the pet head (as for the image+head
+layout) as well as other spatial bins computed on the fore-
+4.Experiments
+groundobjectregionanditscomplement,asdescribednext
+and in Fig. 4c. The foreground region is obtained either
+The models are evaluated ﬁrst on the task of discrim-
+from the automatic segmentation of the pet body or from
+inating the family of the pet (Sect. 4.1), then on the one
+the ground-truth segmentation to obtain a best-case base-
+of discriminating their breed given the family (Sect. 4.2),
+line. The foreground region is subdivided into ﬁve spatial
+and ﬁnally discriminating both the family and the breed
+bins,similartotheimagelayout.Anadditionalbinobtained
+(Sect. 4.3). For the third task, both hierarchical classiﬁca-
+from the foreground region with the head region removed
+tion (i.e, determining ﬁrst the family and then the breed)
+and no further spatial subdivisions is also used. Concate-
+and ﬂat classiﬁcation (i.e, determining the family and the
+nating the histograms for all the spatial bins in this layout
+breed simultaneously) are evaluated. Training uses the
+resultsina48,000dimensionalfeaturevector.
+Oxford-IIIT Pet train and validation data and testing uses
+theOxford-IIITPettestdata. Alltheseresultsaresumma-
+3.3.Automaticsegmentation
+rizedinTab.4andfurtherresultsforpetfamilydiscrimina-
+Theforeground(pet)andbackgroundregionsneededfor tionontheASIRRAdataarereportedinSect.4.1. Failure
+computing the appearance descriptors are obtained auto- casesarereportedinFig.7.
+matically using the grab-cut segmentation technique [36].
+Initialization of grab-cut segmentations was done using
+Baseline. InordertocomparethedifﬁcultyoftheOxford-
+cues from the over-segmentation of an image (i.e, super-
+IIIT Pet dataset to other Fine Grained Visual Catego-
+pixels) similar to the method of [15]. In this method, a
+rization datasets, and also to provide a baseline for our
+SVM classiﬁer is used to assign superpixels a conﬁdence
+breedclassiﬁcationtask,wehaverunthepubliclyavailable
+score. This conﬁdence score is then used to assign super-
+VLFeat [40] BoW classiﬁcation code over three datasets:
+pixels to a foreground or background region to initialize
+Oxford Flowers 102 [33], UCSD-Caltech Birds [14], and
+thegrab-cutiteration. WeusedBerkeley’sultrametriccolor
+Oxford-IIITPetdataset(notethatthiscodeisafastersuc-
+map(UCM)[13]forobtainingthesuperpixels. Eachsuper-
+cessortotheVGG-MKLpackage[41]usedontheUCSD-
+pixelwasdescribedbyafeaturevectorcomprisingthecolor
+CaltechBirdsdatasetin[14]). Thecodeemploysaspatial
+histogramandSift-BoWhistogramcomputedonit. Super-
+pyramid[30],butdoesnotusesegmentationorsalientparts.
+pixelswereassignedascoreusingalinear-SVM[21]which
+TheresultsaregiveninTable3.
+was trained on the features computed on the training data.
+After this initialization, grab-cut was used as in [34]. The 4.1.Petfamilydiscrimination
+improved initialization achieves segmentation accuracy of
+This section evaluates the different models on the task
+65% this improving over our previous method [34] by 4%
+ofdiscriminatingthefamilyofapet(catVsdogclassiﬁca-
+andisabout20%betterthansimplychoosingallpixelsas
+tion).
+foreground(i.e,assumingthepetforegroundentirelyoccu-
+piestheimage). (Tab.2). Examplesegmentationsproduced
+by our method on the Oxford-IIIT Pet data are shown in Shapeonly. Themaximumresponseofthecatfacedetec-
+Fig.5. tor(Sect.3.1)onanimageisusedasanimage-levelscore. Shape Appearance ClassiﬁcationAccuracy(%)
+layouttype usinggroundtruth family breed(S.4.2) both(S.4.3)
+(S.4.1) cat dog hierarchical ﬂat
+1 (cid:88) – – 94.21 NA NA NA NA
+2 – Image – 82.56 52.01 40.59 NA 39.64
+3 – Image+Head – 85.06 60.37 52.10 NA 51.23
+4 – Image+Head+Body – 87.78 64.27 54.31 NA 54.05
+5 – Image+Head+Body (cid:88) 88.68 66.12 57.29 NA 56.60
+6 (cid:88) Image – 94.88 50.27 42.94 42.29 43.30
+7 (cid:88) Image+Head – 95.07 59.11 54.56 52.78 54.03
+8 (cid:88) Image+Head+Body – 94.89 63.48 55.68 55.26 56.68
+9 (cid:88) Image+Head+Body (cid:88) 95.37 66.07 59.18 57.77 59.21
+Table4.Comparisonbetweendifferentmodels.Thetablecomparesdifferentmodelsonthethreetasksofdiscriminatingthefamily,the
+breedgiventhefamily,andthebreedandfamilyofthepetsintheOxford-IIITPetdataset(Sect.2). Differentcombinationsoftheshape
+features(deformablepartmodelofthepetfaces)andofthevariousappearancefeaturesaretested(Sect.3.2,Fig.4).
+for the cat class. The same is done to obtain a score for Method MeanClass.Accuracy
+thedogclass. ThenalinearSVMislearnedtodiscriminate Golleetal.[25] 82.7%
+betweencatsanddogsbasedonthesetwoscores. Theclas- Thispaper(Shapeonly) 92.9%
+siﬁcationaccuracyofthismodelontheOxford-IIITPettest
+datais94.21%. Table 5. Performance on ASIRRA Data. Table shows perfor-
+manceachievedontaskofpetfamilyclassiﬁcationposedbythe
+ASIRRAchallenge. BestresultsobtainedbyGolle[25]wereob-
+tained using 10000 images from the data. 8000 for training and
+Appearanceonly. Spatialhistogramsofvisualwordsare
+2000fortesting. Ourtestresultsareshownon24990imagesin
+usedinanon-linearSVMtodiscriminatebetweencatsand
+theASIRRAdataset.
+dogs, as detailed in Sect. 3.2. The accuracy depends on
+the type of spatial histograms considered, which in turn
+depends on the layout of the spatial bins. On the Oxford- 92.9%,whichcorrespondstoa42%probabilityofbreaking
+IIIT Pet test data, the image layout obtains an accuracy of thetestinasingletry.Forcomparison,thebestaccuracyre-
+82.56%;addingheadinformationusingimage+headlayout portedintheliteratureontheASIRRAdatais82.7%[25],
+yields an accuracy of 85.06%. Using image+head+body which corresponds to just a 9.2% chance of breaking the
+layoutimprovesaccuracybyafurther2.7%to87.78%. An test. Duetolackofsufﬁcienttrainingdatatotrainappear-
+improvement of 1% was observed when the ground-truth ance models for ASIRRA data, we did not evaluate these
+segmentations were used inplace of the segmentations es- modelsonASIRRAdataset.
+timatedbygrab-cut(Sect.3.2). Thisprogressionindicates
+4.2.Breeddiscrimination
+that the more accurate the localization of the pet body, the
+betteristheclassiﬁcationaccuracy. Thissectionevaluatesthemodelsonthetaskofdiscrimi-
+natingthedifferentbreedsofcatsanddogsgiventheirfam-
+ily. This is done by learning a multi-class SVM by using
+Shapeandappearance. Theappearanceandshapeinfor- the 1-Vs-rest decomposition [37] (this means learning 12
+mationarecombinedbysummingtheexp-χ2kernelforthe binaryclassiﬁersforcatsand25fordogs).Therelativeper-
+appearance part (Sect. 3.2) with a linear kernel on the cat formanceofthedifferentmodelsissimilartothatobserved
+scoresandalinearkernelonthedogscores. Thecombina- for pet family classiﬁcation in Sect. 4.1. The best breed
+tion boosts the performance by an additional 7% over that classiﬁcation accuracies for cats and dogs are 63.48% and
+ofusingappearancealone,yieldingapproximately95.37% 55.68%respectively,whichimproveto66.07%and59.18%
+accuracy(Table4,rows5and9),withallthevariantsofthe whenthegroundtruthsegmentationsareused.
+appearancemodelperformingsimilarly.
+4.3.Familyandbreeddiscrimination
+TheASIRRAdata. TheASIRRAdatadoesnotspecifya Thissectioninvestigatesclassifyingboththefamilyand
+trainingset, soweusedmodelstrainedontheOxford-IIIT thebreed. Twoapproachesareexplored: hierarchicalclas-
+Pet data and the ASIRRA data was used only for testing. siﬁcation,inwhichthefamilyisdecidedﬁrstasinSect.4.1,
+The accuracy of the shape model on the ASIRRA data is andthenthebreedisdecidedasinSect.4.2,andﬂatclassi-Abyssinian  1 35.7%
+Bengal  2 39.0%
+Birman  3 77.0%
+Bombay  4 81.8%
+British Shorthair  5 69.0%
+Egyptian Mau  6 71.1%
+Maine Coon  7 60.0%
+Persian  8 64.0%
+Ragdoll  9 51.0%
+Russian Blue 10 46.0%
+Siamese 11 70.0%
+Sphynx 12 82.0%
+Am. Bulldog 13 52.0%
+Am. Pit Bull Terrier 14 4.0%
+Basset Hound 15 62.0%
+Beagle 16 33.0%
+Boxer 17 38.4%
+Chihuahua 18 20.0%
+Eng. Cocker Spaniel 19 29.0%
+Eng. Setter 20 43.0%
+German Shorthaired 21 80.0%
+Great Pyrenees 22 70.0%
+Havanese 23 51.0%
+Japanese Chin 24 82.0%
+Keeshond 25 75.8%
+Leonberger 26 53.0%
+Miniature Pinscher 27 39.0%
+Newfoundland 28 82.0%
+Pomeranian 29 28.0%
+Pug 30 85.0%
+Saint Bernard 31 59.0%
+Samoyed 32 91.0%
+Scottish Terrier 33 66.7%
+Shiba Inu 34 57.0%
+Staff. Bull Terrier 35 37.1%
+Wheaten Terrier 36 53.0%
+Yorkshire Terrier 37 50.0%
+12345678910111213141516171819202122232425262728293031323334353637
+Figure6.Confusionmatrixforbreeddiscrimination. Thever-
+ticalaxisreportsthegroundtruthlabels,andthehorizontalaxisto
+thepredictedones(theupper-leftblockarethecats).Thematrixis
+normalizedbyrowandthevaluesalongthediagonalarereported
+ontheright. Thematrixcorrespondstothebreedclassiﬁerusing
+shape features, appearance features with the image, head, body,
+body-head layouts with automatic segmentations, and a 37-class
+SVM. This is the best result for breed classiﬁcation, and corre-
+spondstothelastentryofrownumber8inTab.4.
+a b c d
+Figure 5. Example segmentation results on Oxford-IIIT Pet
+dataset. The segmentation of the pet from the background was
+obtainedautomaticallyasdescribedinSect.3.3. e f g h
+Figure7.Failurecasesforthemodelusingappearanceonly(im-
+age layout) in Sect. 4.2. First row: Cat images that were incor-
+ﬁcation,inwhicha37-classSVMislearneddirectly,using rectlyclassiﬁedasdogsandviceversa. Secondrow: Bengalcats
+the same method discussed in Sect. 4.2. The relative per- (b–d) classiﬁed as Egyptian Mau (a). Third row: English Setter
+formanceofthedifferentmodelsissimilartothatobserved (f–h)classiﬁedasEnglishCockerSpaniel(e).
+in Sect. 4.1 and 4.2. Flat classiﬁcation is better than hier-
+archical, but the latter requires less work at test time, due
+5.Summary
+tothefactthatfewerSVMclassiﬁersneedtobeevaluated.
+For example, using the appearance model with the image, This paper has introduced the Oxford-IIIT Pet dataset
+head, image-head layouts for 37 class classiﬁcation yields for the ﬁne-grained categorisation problem of identifying
+an accuracy of 51.23%, adding the shape information hi- thefamilyandbreedofpets(catsanddogs). Threediffer-
+erarchically improves this accuracy to 52.78%, and using enttasksandcorrespondingbaselinealgorithmshavebeen
+shape and appearance together in a ﬂat classiﬁcation ap- proposedandinvestigatedobtainingveryencouragingclas-
+proachachievesanaccuracy54.03%. Theconfusionmatrix siﬁcation results on the dataset. Furthermore, the baseline
+forthebestresultforbreedclassiﬁcation,correspondingto modelswereshowntoachievestate-of-the-artperformance
+thelastentryoftheeightrowofTable4isshowninFig.4. ontheASIRRAchallengedata,breakingthetestwith42%

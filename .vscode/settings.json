@@ -1,0 +1,35 @@
+{
+    "files.associations": {
+        "*.py": "python",
+        "xtr1common": "cpp",
+        "map": "cpp",
+        "set": "cpp",
+        "type_traits": "cpp",
+        "bitset": "cpp",
+        "deque": "cpp",
+        "fstream": "cpp",
+        "iomanip": "cpp",
+        "iterator": "cpp",
+        "list": "cpp",
+        "queue": "cpp",
+        "random": "cpp",
+        "stack": "cpp",
+        "vector": "cpp",
+        "xlocmon": "cpp",
+        "xlocnum": "cpp",
+        "xstring": "cpp",
+        "sstream": "cpp",
+        "unordered_map": "cpp",
+        "unordered_set": "cpp",
+        "xhash": "cpp",
+        "xmemory": "cpp",
+        "xtree": "cpp",
+        "xutility": "cpp",
+        "array": "cpp",
+        "functional": "cpp",
+        "memory": "cpp",
+        "system_error": "cpp",
+        "utility": "cpp"
+    }
+
+}

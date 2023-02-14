@@ -1,0 +1,55 @@
+name: Build tutorials
+on:
+  push:
+    branches:
+      - main
+  release:
+    types:
+      - published
+  schedule:
+    - cron: "0 10 * * 1"  # Mondays @ 6AM Eastern
+
+jobs:
+  notebooks:
+    name: "Execute and convert the notebooks to HTML"
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Set up Python
+        uses: actions/setup-python@v4.3.0
+        with:
+          python-version: 3.9
+
+      - name: Install dependencies
+        run: |
+          sudo apt-get install pandoc
+          python -m pip install -U pip
+          python -m pip install -r requirements-dev.txt
+
+      - name: Execute the notebooks
+        run: |
+          make executeall
+
+      - name: Convert the notebooks to HTML
+        run: |
+          make convertall
+
+      - name: Name artifact
+        id: nameartifact
+        run: |
+          echo "::set-output name=artifactName::rendered-tutorials"
+
+      - uses: actions/upload-artifact@v3
+        with:
+          name: ${{ steps.nameartifact.outputs.artifactName }}
+          path: _build
+
+      - name: Dispatch Learn Astropy deployment
+        uses: peter-evans/repository-dispatch@f2696244ec00ed5c659a5cc77f7138ad0302dffb
+        if: ${{ (github.event_name == 'push') && (github.ref == 'refs/heads/main') && (github.repository == 'astropy/astropy-tutorials')}}
+        with:
+          token: ${{ secrets.DISPATCH_GITHUB_TOKEN }}
+          repository: astropy/learn-astropy
+          event-type: tutorials-build
+          client-payload: '{"artifactName": "${{ steps.nameartifact.outputs.artifactName }}", "runid": "${{ github.run_id }}", "repo": "${{ github.repository }}"}'

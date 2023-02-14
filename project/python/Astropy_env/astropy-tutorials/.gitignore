@@ -1,0 +1,11 @@
+.ipynb_checkpoints/
+_build/
+IPython-*
+*.fits*
+*.gz
+*.pdf
+*.jpg
+*.pyc
+*.tex
+exec*.ipynb
+.DS_Store

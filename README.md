@@ -182,6 +182,8 @@ cd Scripts
 
 ## 8 django系统汇总
 
+[Django大礼包--应用程序、项目和资源的精选表单](https://blog.csdn.net/m0_60142451/article/details/120709821?utm_medium=distribute.pc_relevant.none-task-blog-2~default~baidujs_baidulandingword~default-0-120709821-blog-120278787.pc_relevant_landingrelevant&spm=1001.2101.3001.4242.1&utm_relevant_index=3)
+
 ### 8.1 [cartridge 购物车应用程序](https://blog.csdn.net/yanghuan313/article/details/70215655?spm=1001.2101.3001.6650.4&utm_medium=distribute.pc_relevant.none-task-blog-2%7Edefault%7EBlogCommendFromBaidu%7ERate-4-70215655-blog-125327167.pc_relevant_3mothn_strategy_recovery&depth_1-utm_source=distribute.pc_relevant.none-task-blog-2%7Edefault%7EBlogCommendFromBaidu%7ERate-4-70215655-blog-125327167.pc_relevant_3mothn_strategy_recovery&utm_relevant_index=5)
 
 ### 8.2 [GeoDjango --基于django的地理web模块](https://docs.djangoproject.com/en/dev/ref/contrib/gis/)
